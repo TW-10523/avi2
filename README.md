@@ -120,7 +120,7 @@ Verify: docker compose ps
 
 Services started by Compose
 - MySQL 8.0 → 3306 (seeded via api/src/mysql/scripts/*.sql)
-- Redis → 6379 (password: abcd1234)
+- Redis → 6379 
 - Solr → 8983 (core: mycore)
 
 ✅ Step 2: Configure the app
