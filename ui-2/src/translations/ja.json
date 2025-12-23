@@ -1,0 +1,113 @@
+{
+  "common": {
+    "language": "言語",
+    "english": "English",
+    "japanese": "日本語",
+    "settings": "設定",
+    "profile": "プロフィール",
+    "logout": "ログアウト",
+    "notifications": "通知",
+    "cancel": "キャンセル",
+    "save": "保存",
+    "close": "閉じる",
+    "search": "検索",
+    "loading": "読み込み中..."
+  },
+
+  "login": {
+    "welcome": "ようこそ",
+    "signIn": "HRポリシーシステムにサインインしてください",
+    "username": "ユーザー名",
+    "password": "パスワード",
+    "signInButton": "サインイン",
+    "forgotPassword": "パスワードをお忘れですか？",
+    "invalidCredentials": "ユーザー名またはパスワードが正しくありません",
+    "pleaseLogin": "すべての項目を入力してください",
+    "connectionError": "接続エラーが発生しました。もう一度お試しください。",
+
+    "forgotPasswordTitle": "パスワードをお忘れですか",
+    "forgotPasswordMessage": "パスワードをリセットするには、HR部門にお問い合わせください。",
+    "backToLogin": "ログインに戻る"
+  },
+
+  "header": {
+    "title": "HRポリシーデジタルツイン",
+    "department": "部門"
+  },
+
+  "home": {
+    "askHRBot": "HRボットに質問",
+    "history": "履歴",
+    "notifications": "通知",
+    "documents": "ドキュメント",
+    "admin": "管理者ダッシュボード",
+    "contactAdmin": "管理者に連絡",
+    "message": "メッセージ",
+    "welcomeBack": "ようこそ",
+    "whatToDo": "今日は何をしますか？"
+  },
+
+  "chat": {
+    "title": "HRボットに質問",
+    "askQuestion": "質問を入力してください...",
+    "send": "送信",
+    "stop": "停止",
+    "loading": "読み込み中...",
+    "noResults": "結果が見つかりません",
+    "newChat": "新しいチャット",
+    "chatHistory": "チャット履歴",
+    "clearHistory": "履歴をクリア",
+    "exportChat": "チャットをエクスポート",
+    "deleteChat": "チャットを削除",
+    "chatSaved": "履歴に保存されました",
+    "noChats": "履歴はまだありません",
+    "startConversation": "会話を開始"
+  },
+
+  "history": {
+    "title": "会話履歴",
+    "empty": "履歴はありません",
+    "noResults": "結果が見つかりません",
+    "searchPlaceholder": "履歴を検索...",
+    "tryDifferent": "別のキーワードを試してください",
+    "yourConversations": "会話がここに表示されます",
+    "daysAgo": "日前",
+    "today": "今日",
+    "yesterday": "昨日",
+    "source": "ソース",
+    "page": "ページ"
+  },
+
+  "settings": {
+    "title": "設定",
+    "managePreferences": "設定と言語を管理",
+    "language": "言語",
+    "chooseLanguage": "言語を選択"
+  },
+
+  "admin": {
+    "title": "管理者ダッシュボード",
+    "documents": "ドキュメント",
+    "users": "ユーザー",
+    "activity": "アクティビティ",
+    "notifications": "通知",
+      "analytics": "分析",
+    "sendNotification": "通知を送信",
+    "notificationTitle": "通知タイトル",
+    "notificationMessage": "通知メッセージ",
+    "send": "送信"
+  },
+
+  "profile": {
+    "title": "プロフィール",
+    "name": "名前",
+    "email": "メール",
+    "department": "部門",
+    "role": "役割",
+    "employeeId": "従業員ID",
+    "lastLogin": "最終ログイン",
+    "signOut": "サインアウト"
+  }
+}
+
+

@@ -1,0 +1,46 @@
+version: "3.8"
+services:
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/volumes/data/redis-data:/data
+      - ./data/volumes/redis.conf:/usr/local/etc/redis/redis.conf
+    networks:
+      - avairy-network
+    command: redis-server /usr/local/etc/redis/redis.conf --appendonly yes --requirepass "abcd1234"
+  mysql:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: "av1aRy@adm1n"
+      MYSQL_ALLOW_EMPTY_PASSWORD: "no"
+      MYSQL_DATABASE: "aviary-db"
+      MYSQL_USER: "aviaryAdmin"
+      MYSQL_PASSWORD: "av1aRy@adm1n"
+      TZ: "Asia/Tokyo"
+    volumes:
+      - ./data/volumes/data/mysql-data:/var/lib/mysql
+      - ./data/volumes/conf/my.cnf:/etc/mysql/my.cnf
+      - ./api/src/mysql/scripts:/docker-entrypoint-initdb.d
+    networks:
+      - avairy-network
+    command: --default-authentication-plugin=mysql_native_password --lower_case_table_names=1 --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci --default-time-zone=+09:00
+  solr:
+    image: solr:9.8.1
+    ports:
+      - "8983:8983"
+    environment:
+      - SOLR_MODULES=extraction
+    volumes:
+      - ./data/volumes/data/solr-data:/var/solr/data
+    user: "0:0"
+    command: >
+      bash -lc "
+        chown -R 8983:8983 /var/solr &&
+        exec gosu solr solr-precreate mycore /opt/solr/server/solr/configsets/sample_techproducts_configs
+      "
+networks:
+    avairy-network:

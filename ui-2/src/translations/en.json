@@ -1,0 +1,111 @@
+{
+  "common": {
+    "language": "Language",
+    "english": "English",
+    "japanese": "Japanese",
+    "settings": "Settings",
+    "profile": "Profile",
+    "logout": "Logout",
+    "notifications": "Notifications",
+    "cancel": "Cancel",
+    "save": "Save",
+    "close": "Close",
+    "search": "Search",
+    "loading": "Loading..."
+  },
+
+  "login": {
+    "welcome": "Welcome",
+    "signIn": "Sign in to access HR Policy System",
+    "username": "Username",
+    "password": "Password",
+    "signInButton": "Sign In",
+    "forgotPassword": "Forgot Password?",
+    "invalidCredentials": "Invalid username or password",
+    "pleaseLogin": "Please fill in all fields",
+    "connectionError": "Connection error. Please try again.",
+
+    "forgotPasswordTitle": "Forgot Password",
+    "forgotPasswordMessage": "Please contact your HR department to reset your password.",
+    "backToLogin": "Back to Login"
+  },
+
+  "header": {
+    "title": "Thirdwave",
+    "department": "Department"
+  },
+
+  "home": {
+    "askHRBot": "Ask HR Bot",
+    "history": "History",
+    "notifications": "Notifications",
+    "documents": "Documents",
+    "admin": "Admin Dashboard",
+    "contactAdmin": "Contact Admin",
+    "message": "Message",
+    "welcomeBack": "Welcome",
+    "whatToDo": "What would you like to do today?"
+  },
+
+  "chat": {
+    "title": "Ask HR Bot",
+    "askQuestion": "Ask a question...",
+    "send": "Send",
+    "stop": "Stop",
+    "loading": "Loading...",
+    "noResults": "No results found",
+    "newChat": "New Chat",
+    "chatHistory": "Chat History",
+    "clearHistory": "Clear History",
+    "exportChat": "Export Chat",
+    "deleteChat": "Delete Chat",
+    "chatSaved": "Chat saved to history",
+    "noChats": "No chat history yet",
+    "startConversation": "Start a new conversation"
+  },
+
+  "history": {
+    "title": "Conversation History",
+    "empty": "No conversation history yet",
+    "noResults": "No results found",
+    "searchPlaceholder": "Search your conversation history...",
+    "tryDifferent": "Try different keywords",
+    "yourConversations": "Your conversations will appear here",
+    "daysAgo": "days ago",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "source": "Source",
+    "page": "Page"
+  },
+
+  "settings": {
+    "title": "Settings",
+    "managePreferences": "Manage your preferences and account settings",
+    "language": "Language",
+    "chooseLanguage": "Choose your preferred language"
+  },
+
+  "admin": {
+    "title": "Admin Dashboard",
+    "documents": "Documents",
+    "users": "Users",
+    "activity": "Activity",
+    "notifications": "Notifications",
+    "analytics": "Analytics",
+    "sendNotification": "Send Notification",
+    "notificationTitle": "Notification Title",
+    "notificationMessage": "Notification Message",
+    "send": "Send"
+  },
+
+  "profile": {
+    "title": "Profile Information",
+    "name": "Name",
+    "email": "Email",
+    "department": "Department",
+    "role": "Role",
+    "employeeId": "Employee ID",
+    "lastLogin": "Last Login",
+    "signOut": "Sign out"
+  }
+}

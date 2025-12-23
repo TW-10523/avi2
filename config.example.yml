@@ -1,0 +1,173 @@
+# Copy this file to config/default.yml and update values as needed
+# cp config.example.yml config/default.yml
+
+APP_MODE: development # development, production or rag-evaluation
+
+ApacheSolr:
+  url: http://localhost:8983
+  coreName: mycore
+
+MySQL:
+  host: localhost
+  port: 3306
+  user: aviaryAdmin
+  password: av1aRy@adm1n
+  database: aviary-db
+
+Redis:
+  host: localhost
+  port: 6379
+  password: abcd1234
+  database: 0
+
+Ollama:
+  url:
+    - http://localhost:11435
+  model: gpt-oss:20b  # Run: ollama pull gpt-oss:20b
+
+Models:
+  chatModel:
+    name: gpt-oss:20b
+    temperature: 0.7
+    repeat_penalty: 1.5
+
+  chatTitleGenModel:
+    name: gpt-oss:20b
+    temperature: 0.8
+    repeat_penalty: 1.5
+
+  chatKeywordGenModel:
+    name: gpt-oss:20b
+    temperature: 0.1
+    repeat_penalty: 1.5
+
+  summaryGenModel:
+    name: gpt-oss:20b
+    temperature: 0.7
+    repeat_penalty: 1.5
+
+  translateModel:
+    name: gpt-oss:20b
+    temperature: 0.7
+    repeat_penalty: 1.5
+
+  ragEmbeddingModel:
+    name: BAAI/bge-m3
+    cacheDir: <PROJECT_ROOT_DIR>/rag/data/model
+
+  ragRerankModel:
+    name: hotchpotch/japanese-bge-reranker-v2-m3-v1
+    cacheDir: <PROJECT_ROOT_DIR>/rag/data/model
+
+Frontend:
+  host: localhost
+  port: 7000  
+
+Backend:
+  host: localhost
+  port: 9090
+  jwtSecret: aviary
+  jwtRefreshSecret: refreshToken
+  logTime: ja
+  Tokenizer:
+    charactersPerToken: 4
+  ModelContextWindowLimits:
+    totalLimit: 4096
+    systemPromptReserve: 300
+    formattingReserve: 100
+    outputReserve: 500
+
+RAG:
+  Backend:
+    host: localhost
+    port: 8000
+    url: http://localhost:8000
+
+  VectorStore:
+    type: chroma
+    path: <PROJECT_ROOT_DIR>/rag/app/rag_db
+
+  Uploads:
+    rootDir: <PROJECT_ROOT_DIR>/uploads
+    filesDir: <PROJECT_ROOT_DIR>/uploads/files
+    maxFileSize: 1073741824
+    keepExtensions: true
+    uploadDirectory: <PROJECT_ROOT_DIR>/uploads/temp
+
+  useFaqCache: false
+  FaqCacheSettings:
+    cacheApiUrl: http://localhost:8001
+    vectorSimilarityThreshold: 0.8
+    crossEncoderThreshold: 0.5
+
+  mode:
+    - splitByArticleWithHybridSearch
+    - splitByPage
+
+  PreProcess:
+    PDF:
+      extensions:
+        - .pdf
+      splitByPage:
+        separator: \n \n  \n \n
+        chunkSize: 512
+        overlap: 128
+      splitByArticle:
+        collectionName: splitByArticleWithHybridSearch
+        footerRatio: 0.92
+        multiplier: 2
+
+    DOC:
+      extensions:
+        - .doc
+        - .docx
+      splitByPage:
+        separator: \n\n
+        chunkSize: 512
+        overlap: 128
+
+    Default:
+      splitByPage:
+        separator: \n\n
+        chunkSize: 512
+        overlap: 128
+
+  Retrieval:
+    usingRerank: false
+    rerankMaxLength: 1024
+    rerankBatchSize: 64
+    rerankBatchSizeCPU: 16
+    rerankUseCompile: false
+    rerankUse8Bit: false
+    HybridSearch:
+      vector_only: true
+      bm25_only: false
+      vector_weight: 0.5
+      bm25_weight: 0.5
+      bm25_params:
+        k1: 1.8
+        b: 0.75
+    throwErrorWhenCUDAUnavailable: false
+    topK: 10
+    topKForEachCollection: 3
+    usingNeighborChunkAware: true
+
+ResponseFormatPrompt:
+  General:
+    description: >
+      General response format
+    format: |
+      <Answer>
+      <Key Points>
+    example: |
+      <Question>
+      When can I take paid leave?
+      <Answer>
+      You can take paid leave immediately after joining.
+
+# Azure AD SSO (Optional - update with your values)
+AZURE_AD:
+  TENANT_ID: your-tenant-id
+  CLIENT_ID: your-client-id
+  CLIENT_SECRET: your-client-secret
+  REDIRECT_URI: http://localhost:9090/user/auth/callback
