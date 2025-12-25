@@ -75,8 +75,15 @@ router.get('/inbox', async (ctx: any) => {
 
     let where;
     if (isAdmin) {
-      // Admin sees all user queries sent to admin
-      where = { recipient_type: 'admin', sender_type: 'user' };
+      // Admin sees:
+      // 1. All user queries sent to admin
+      // 2. All messages sent by admin (their own sent messages)
+      where = {
+        [Op.or]: [
+          { recipient_type: 'admin', sender_type: 'user' },
+          { sender_id: 'admin', sender_type: 'admin' },
+        ],
+      };
     } else {
       // Users see: direct replies from admin + broadcasts
       // Since whitelisted users get test_user, show all admin->user messages
@@ -154,6 +161,62 @@ router.put('/mark-all-read', async (ctx: any) => {
     ctx.body = { code: 200, message: 'All marked as read' };
   } catch (err) {
     ctx.body = { code: 500, message: 'Failed' };
+  }
+});
+
+// DELETE /delete - Admin only: Permanently delete messages
+router.delete('/delete', async (ctx: any) => {
+  try {
+    const user = getCurrentUser(ctx);
+    if (user.userName !== 'admin') {
+      ctx.body = { code: 403, message: 'Admin only' };
+      return;
+    }
+
+    const { deleteUserMessages, deleteAdminMessages } = ctx.request.body;
+
+    if (!deleteUserMessages && !deleteAdminMessages) {
+      ctx.body = { code: 400, message: 'At least one scope must be selected' };
+      return;
+    }
+
+    // Build where clause based on selected scopes
+    const whereConditions: any[] = [];
+
+    if (deleteUserMessages) {
+      whereConditions.push({ sender_type: 'user' });
+    }
+
+    if (deleteAdminMessages) {
+      whereConditions.push({ sender_type: 'admin' });
+    }
+
+    const where = whereConditions.length > 1 
+      ? { [Op.or]: whereConditions }
+      : whereConditions[0];
+
+    // Permanently delete messages (hard delete - Sequelize destroy is hard delete by default)
+    // This completely removes all matching messages from the database
+    const deletedCount = await Message.destroy({ 
+      where
+    });
+    
+    // Verify deletion by counting remaining messages of the same type
+    const remainingCount = await Message.count({ where });
+    
+    console.log(`[Messages] Permanently deleted ${deletedCount} messages from database. Remaining matching: ${remainingCount}`);
+
+    ctx.body = { 
+      code: 200, 
+      message: 'Messages deleted permanently',
+      result: { 
+        deletedCount,
+        remainingCount: remainingCount // For verification
+      }
+    };
+  } catch (err) {
+    console.error('[Messages] Delete error:', err);
+    ctx.body = { code: 500, message: 'Failed to delete messages' };
   }
 });
 

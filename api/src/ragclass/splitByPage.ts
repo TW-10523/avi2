@@ -451,9 +451,9 @@ async function getSearchKeywords(prompt: string): Promise<string[]> {
         stream: false,
         model: config.Models.chatKeywordGenModel.name,
         messages,
-        // Structured outputs doesn't work with gpt-oss due to the use of the new Harmony response format.
+        // Structured outputs doesn't work with llama3.2:latest due to the use of the new Harmony response format.
         // refer to: https://github.com/ollama/ollama/issues/11691#issuecomment-3157223324
-        format: config.Models.chatKeywordGenModel.name.includes("gpt-oss") ? null : keywordSchema,
+        format: config.Models.chatKeywordGenModel.name.includes("llama3.2:latest") ? null : keywordSchema,
         options: {
           temperature: config.Models.chatKeywordGenModel.temperature ?? 0.1,
           repeat_penalty: config.Models.chatKeywordGenModel.repeat_penalty ?? 1.5
