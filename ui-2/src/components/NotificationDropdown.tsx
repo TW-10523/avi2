@@ -83,7 +83,23 @@ export default function NotificationDropdown({
       });
       const data = await res.json();
       console.log('[Notifications] Fetched messages:', data);
-      if (data.code === 200) setMessages(data.result.messages || []);
+      if (data.code === 200) {
+        const fetchedMessages = data.result.messages || [];
+        // Apply localStorage read state persistence
+        try {
+          const readIds = JSON.parse(localStorage.getItem('read_message_ids') || '[]');
+          const readSet = new Set<number>(Array.isArray(readIds) ? readIds : []);
+          const messagesWithReadState = fetchedMessages.map((m: Message) => ({
+            ...m,
+            is_read: readSet.has(m.id) || m.is_read,
+          }));
+          setMessages(messagesWithReadState);
+          setUnreadCount(messagesWithReadState.filter((m: Message) => !m.is_read).length);
+        } catch {
+          setMessages(fetchedMessages);
+          setUnreadCount(fetchedMessages.filter((m: Message) => !m.is_read).length);
+        }
+      }
     } catch (err) {
       console.error('Failed to fetch messages:', err);
     }
@@ -96,9 +112,25 @@ export default function NotificationDropdown({
         method: 'PUT',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
+      
+      // Update local state immediately
       setMessages(messages.map(m => m.id === id ? { ...m, is_read: true } : m));
       setUnreadCount(Math.max(0, unreadCount - 1));
-    } catch (err) {}
+      
+      // Persist to localStorage for cross-refresh consistency
+      try {
+        const readIds = JSON.parse(localStorage.getItem('read_message_ids') || '[]');
+        const readSet = new Set<number>(Array.isArray(readIds) ? readIds : []);
+        if (!readSet.has(id)) {
+          readSet.add(id);
+          localStorage.setItem('read_message_ids', JSON.stringify(Array.from(readSet)));
+        }
+      } catch (err) {
+        console.error('Failed to persist read state:', err);
+      }
+    } catch (err) {
+      console.error('Failed to mark as read:', err);
+    }
   };
 
   const markAllAsRead = async () => {
@@ -108,9 +140,24 @@ export default function NotificationDropdown({
         method: 'PUT',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
+      
+      // Update local state immediately
+      const unreadIds = messages.filter(m => !m.is_read).map(m => m.id);
       setMessages(messages.map(m => ({ ...m, is_read: true })));
       setUnreadCount(0);
-    } catch (err) {}
+      
+      // Persist all unread IDs to localStorage
+      try {
+        const readIds = JSON.parse(localStorage.getItem('read_message_ids') || '[]');
+        const readSet = new Set<number>(Array.isArray(readIds) ? readIds : []);
+        unreadIds.forEach(id => readSet.add(id));
+        localStorage.setItem('read_message_ids', JSON.stringify(Array.from(readSet)));
+      } catch (err) {
+        console.error('Failed to persist read state:', err);
+      }
+    } catch (err) {
+      console.error('Failed to mark all as read:', err);
+    }
   };
 
   const sendReply = async (msg: Message) => {

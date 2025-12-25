@@ -1,8 +1,6 @@
 import { User, Globe } from 'lucide-react';
 import { User as UserType } from '../types';
 import { useLang } from '../context/LanguageContext';
-// @ts-ignore
-import NotificationDropdown from './NotificationDropdown';
 
 interface HeaderProps {
   user: UserType;
@@ -11,6 +9,8 @@ interface HeaderProps {
   onMarkAsRead?: (item: any) => void;
   unreadCount?: number;
   onSendToAll?: (message: string) => void;
+  notificationSearch?: string;
+  onNotificationSearchChange?: (value: string) => void;
 }
 
 export default function Header({
@@ -20,6 +20,8 @@ export default function Header({
   onMarkAsRead,
   unreadCount = 0,
   onSendToAll,
+  notificationSearch = '',
+  onNotificationSearchChange,
 }: HeaderProps) {
   const { lang, toggleLang } = useLang();
 
@@ -39,7 +41,7 @@ export default function Header({
           </h1>
         </div>
 
-        {/* Right: Language, Notifications, Profile */}
+        {/* Right: Language, Search (notifications scope), Profile */}
         <div className="flex items-center gap-4">
           
           {/* Language Toggle */}
@@ -54,14 +56,7 @@ export default function Header({
             </span>
           </button>
 
-          {/* Notifications */}
-          <NotificationDropdown
-            user={user}
-            notifications={notifications}
-            onMarkAsRead={onMarkAsRead}
-            unreadCount={unreadCount}
-            onSendToAll={onSendToAll}
-          />
+          {/* Notification search moved into Notifications panel header for alignment */}
 
           {/* Profile */}
           <button

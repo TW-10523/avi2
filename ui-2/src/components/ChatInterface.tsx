@@ -41,6 +41,8 @@ import PDFPreview, { SourceCitation } from './PDFPreview';
 
 interface ChatInterfaceProps {
   onSaveToHistory: (query: string, answer: string, source: any) => void;
+  focusSignal?: number;
+  onUserTyping?: (typing: boolean) => void;
 }
 
 interface ChatTask {
@@ -177,7 +179,7 @@ function parseDualLanguageContent(content: string): DualLanguageContent {
   return { isDualLanguage: false, rawContent: cleanContent };
 }
 
-// Action buttons component for bot messages (ChatGPT style)
+// Action buttons component for bot messages (Chatllama3.2:latest style)
 interface MessageActionsProps {
   content: string;
   messageId: string;
@@ -361,7 +363,7 @@ function DualLanguageMessage({ content }: { content: DualLanguageContent }) {
   );
 }
 
-export default function ChatInterface({ onSaveToHistory }: ChatInterfaceProps) {
+export default function ChatInterface({ onSaveToHistory, focusSignal, onUserTyping }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -382,6 +384,7 @@ export default function ChatInterface({ onSaveToHistory }: ChatInterfaceProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // Get translations
   const { t } = useLang();
@@ -403,6 +406,13 @@ export default function ChatInterface({ onSaveToHistory }: ChatInterfaceProps) {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Focus input when requested
+  useEffect(() => {
+    if (typeof focusSignal !== 'undefined') {
+      inputRef.current?.focus();
+    }
+  }, [focusSignal]);
 
   // Load chat list on mount
   useEffect(() => {
@@ -579,6 +589,7 @@ export default function ChatInterface({ onSaveToHistory }: ChatInterfaceProps) {
     const currentInput = payload;
     if (overrideInput === undefined) setInput('');
     setIsTyping(true);
+    onUserTyping?.(false);
 
     try {
       let taskId = currentChatId;
@@ -713,6 +724,11 @@ export default function ChatInterface({ onSaveToHistory }: ChatInterfaceProps) {
   // Handle input change - no auto-resize to prevent scroll
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
+    onUserTyping?.(true);
+    if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+    typingTimerRef.current = setTimeout(() => {
+      onUserTyping?.(false);
+    }, 800);
   };
 
   // Handler for recommendation tile click
@@ -773,6 +789,17 @@ export default function ChatInterface({ onSaveToHistory }: ChatInterfaceProps) {
       />
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col h-full">
+      {/* Internal header inside chat area */}
+      <div className="px-6 py-3 border-b border-white/10 bg-black/10 sticky top-0 z-10">
+        <div className="flex items-center gap-2 text-slate-300 text-sm">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-30" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400" />
+          </span>
+          <span className="font-medium text-white">Assistant</span>
+          <span className="text-slate-400">• Online</span>
+        </div>
+      </div>
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
         {messages.map((message) => (
           <div

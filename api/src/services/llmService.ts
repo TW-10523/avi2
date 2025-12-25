@@ -23,7 +23,7 @@ class LLMService {
     this.baseUrl = Array.isArray(url) ? url[0] : (url || 'http://localhost:11435');
     // Normalize trailing slashes
     this.baseUrl = this.baseUrl.replace(/\/+$/, '');
-    this.model = config.Ollama?.model || 'gpt-oss:20b';
+    this.model = config.Ollama?.model || 'llama3.2:latest';
   }
  
   /**

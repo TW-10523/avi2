@@ -4,7 +4,7 @@ import {
   FileText,
   Users,
   Activity,
-  Bell,
+  MessageSquare,
   CheckCircle,
   Clock,
   AlertCircle,
@@ -16,13 +16,101 @@ import {
   AlertTriangle,
   BarChart3,
   Search,
+  Send,
 } from 'lucide-react';
 import { useLang } from '../context/LanguageContext';
 import { useToast } from '../context/ToastContext';
 import { getToken } from '../api/auth';
 import AnalyticsDashboard from './AnalyticsDashboard';
+import ChatInterface from './ChatInterface';
 
-type Tab = 'documents' | 'analytics' | 'users' | 'activity';
+function ContactUsersPanel() {
+  const [subject, setSubject] = useState('');
+  const [content, setContent] = useState('');
+  const [sending, setSending] = useState(false);
+  const [success, setSuccess] = useState('');
+
+  const sendBroadcast = async () => {
+    if (!content.trim()) return;
+    setSending(true);
+    try {
+      const token = getToken();
+      const res = await fetch('/dev-api/api/messages/broadcast', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ subject: subject.trim() || 'Broadcast Message', content: content.trim() }),
+      });
+      const data = await res.json();
+      if (data.code === 200) {
+        setSuccess('Message sent to all users');
+        setSubject('');
+        setContent('');
+        setTimeout(() => setSuccess(''), 1600);
+      }
+    } catch (e) {
+      // keep silent
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+      <div className="p-4 border-b border-white/10 bg-black/20">
+        <h3 className="text-xl font-semibold text-white">Contact Users</h3>
+        <p className="text-sm text-slate-400">Broadcast a message to all users</p>
+      </div>
+      <div className="p-6 space-y-4">
+        {success && (
+          <div className="p-3 bg-green-600/20 border border-green-500/40 rounded-lg text-green-300 text-sm">
+            {success}
+          </div>
+        )}
+        <div>
+          <label className="block text-sm text-slate-300 mb-1">Subject (Optional)</label>
+          <input
+            type="text"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Announcement subject"
+          />
+        </div>
+        <div>
+          <label className="block text-sm text-slate-300 mb-1">Message *</label>
+          <textarea
+            rows={6}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Write your message to all users..."
+          />
+        </div>
+        <div className="flex justify-end">
+          <button
+            onClick={sendBroadcast}
+            disabled={sending || !content.trim()}
+            className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white text-sm inline-flex items-center gap-2"
+          >
+            <Send className="w-4 h-4" />
+            {sending ? 'Sending...' : 'Send Broadcast'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+type Tab = 'documents' | 'analytics' | 'users' | 'activity' | 'chat' | 'contact' | 'messages';
+
+interface AdminDashboardProps {
+  activeTab?: Tab;
+  onTabChange?: (tab: Tab) => void;
+  initialTab?: Tab;
+}
 
 interface DocumentHistory {
   id: number;
@@ -51,10 +139,17 @@ interface ActivityLog {
   timestamp: Date;
 }
 
-export default function AdminDashboard() {
+export default function AdminDashboard({ activeTab: controlledTab, onTabChange, initialTab }: AdminDashboardProps) {
   const { t } = useLang();
   const toast = useToast();
-  const [activeTab, setActiveTab] = useState<Tab>('documents');
+  const [activeTab, setActiveTab] = useState<Tab>(controlledTab || initialTab || 'analytics');
+    // Sync internal tab with controlled prop
+    useEffect(() => {
+      if (controlledTab && controlledTab !== activeTab) {
+        setActiveTab(controlledTab);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [controlledTab]);
   const [uploadingFiles, setUploadingFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState<Record<string, 'pending' | 'uploading' | 'success' | 'error'>>({});
   const [uploadCategory, setUploadCategory] = useState<string>('company_policy');
@@ -72,6 +167,13 @@ export default function AdminDashboard() {
   const [selectedDocIds, setSelectedDocIds] = useState<Set<number>>(new Set());
   const [pendingBulkDelete, setPendingBulkDelete] = useState<DocumentHistory[] | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  // Delete Messages state
+  const [deleteUserMessages, setDeleteUserMessages] = useState(false);
+  const [deleteAdminMessages, setDeleteAdminMessages] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [confirmationText, setConfirmationText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteSuccess, setDeleteSuccess] = useState(false);
   const [pipelineSteps, setPipelineSteps] = useState<{
     step: number;
     status: 'pending' | 'in-progress' | 'completed' | 'error';
@@ -454,26 +556,35 @@ export default function AdminDashboard() {
     { id: 'analytics' as Tab, label: t('admin.analytics'), icon: BarChart3 },
     { id: 'users' as Tab, label: t('admin.users'), icon: Users },
     { id: 'activity' as Tab, label: t('admin.activity'), icon: Activity },
+    { id: 'chat' as Tab, label: 'Ask HR Bot', icon: MessageSquare },
+    { id: 'contact' as Tab, label: 'Contact Users', icon: Users },
+    { id: 'messages' as Tab, label: 'Delete Messages', icon: Trash2 },
   ];
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex border-b border-white/10 bg-black/20">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 transition-all ${
-              activeTab === tab.id
-                ? 'bg-white/10 border-b-2 border-blue-500 text-white'
-                : 'text-slate-400 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            <tab.icon className="w-5 h-5" />
-            <span className="font-medium">{tab.label}</span>
-          </button>
-        ))}
-      </div>
+      {/* Hide internal tab bar when controlled by external sidebar */}
+      {!controlledTab && (
+        <div className="flex border-b border-white/10 bg-black/20">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => {
+                setActiveTab(tab.id);
+                onTabChange?.(tab.id);
+              }}
+              className={`flex-1 flex items-center justify-center gap-2 px-6 py-4 transition-all ${
+                activeTab === tab.id
+                  ? 'bg-white/10 border-b-2 border-blue-500 text-white'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <tab.icon className="w-5 h-5" />
+              <span className="font-medium">{tab.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto p-6">
         {/* Delete Confirmation Modal */}
@@ -906,6 +1017,23 @@ export default function AdminDashboard() {
           <AnalyticsDashboard />
         )}
 
+        {activeTab === 'chat' && (
+          <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden animate-section-in flex flex-col h-full">
+            <div className="p-4 border-b border-white/10 bg-black/20">
+              <h3 className="text-xl font-semibold text-white">Ask HR Bot</h3>
+              <p className="text-sm text-slate-400">Ask questions inline</p>
+            </div>
+            {/* Make chat occupy full vertical height with proper scrolling */}
+            <div className="flex-1 min-h-0">
+              <ChatInterface onSaveToHistory={() => {}} />
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'contact' && (
+          <ContactUsersPanel />
+        )}
+
         {activeTab === 'users' && (
           <div className="space-y-6">
             <h3 className="text-xl font-semibold text-white">User Management</h3>
@@ -981,7 +1109,214 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
+
+        {activeTab === 'messages' && (
+          <div className="space-y-6">
+            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-6">
+              <div className="flex items-start gap-4">
+                <div className="p-3 rounded-lg bg-red-500/20 flex-shrink-0">
+                  <AlertTriangle className="w-6 h-6 text-red-400" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-semibold text-white mb-2">Delete Messages</h3>
+                  <p className="text-sm text-slate-300 mb-4">
+                    This is a <span className="font-semibold text-red-400">destructive action</span> that will permanently delete messages from the database. This action cannot be undone.
+                  </p>
+                  
+                  <div className="space-y-4 mt-6">
+                    <div className="space-y-3">
+                      <label className="flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-lg cursor-pointer hover:bg-white/10 transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={deleteUserMessages}
+                          onChange={(e) => setDeleteUserMessages(e.target.checked)}
+                          className="w-5 h-5 accent-red-600"
+                        />
+                        <div className="flex-1">
+                          <span className="text-white font-medium">Messages sent by users</span>
+                          <p className="text-xs text-slate-400 mt-1">Delete all messages sent by users to admins</p>
+                        </div>
+                      </label>
+
+                      <label className="flex items-center gap-3 p-4 bg-white/5 border border-white/10 rounded-lg cursor-pointer hover:bg-white/10 transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={deleteAdminMessages}
+                          onChange={(e) => setDeleteAdminMessages(e.target.checked)}
+                          className="w-5 h-5 accent-red-600"
+                        />
+                        <div className="flex-1">
+                          <span className="text-white font-medium">Messages sent by admins</span>
+                          <p className="text-xs text-slate-400 mt-1">Delete all messages sent by admins (replies and broadcasts)</p>
+                        </div>
+                      </label>
+                    </div>
+
+                    <div className="pt-4 border-t border-white/10">
+                      <button
+                        onClick={() => {
+                          if (!deleteUserMessages && !deleteAdminMessages) {
+                            toast.error('Please select at least one option');
+                            return;
+                          }
+                          setShowDeleteConfirm(true);
+                          setConfirmationText('');
+                          setDeleteSuccess(false);
+                        }}
+                        disabled={!deleteUserMessages && !deleteAdminMessages}
+                        className="w-full px-6 py-3 bg-red-600 hover:bg-red-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                        Delete Messages
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Ask HR Bot and Contact Users already handled above for 'chat' and 'contact' tabs */}
       </div>
+
+      {/* Delete Messages Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 border-2 border-red-500/50 rounded-xl max-w-lg w-full p-6 space-y-6 shadow-2xl">
+            <div className="flex items-start gap-4">
+              <div className="p-3 rounded-lg bg-red-500/20 flex-shrink-0">
+                <AlertTriangle className="w-8 h-8 text-red-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-2xl font-bold text-white mb-2">Delete Messages Permanently</h3>
+                <p className="text-sm text-slate-300 mb-4">
+                  This action will <span className="font-semibold text-red-400">permanently delete</span> all selected messages from the database. This cannot be undone.
+                </p>
+                
+                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-4">
+                  <p className="text-sm font-medium text-red-300 mb-2">You are about to delete:</p>
+                  <ul className="text-sm text-slate-300 space-y-1 ml-4">
+                    {deleteUserMessages && <li className="list-disc">All messages sent by users</li>}
+                    {deleteAdminMessages && <li className="list-disc">All messages sent by admins</li>}
+                  </ul>
+                </div>
+
+                <div className="space-y-3">
+                  <label className="block">
+                    <p className="text-sm font-medium text-white mb-2">
+                      Type <span className="font-mono bg-red-500/20 text-red-300 px-2 py-1 rounded">DELETE ALL MESSAGES</span> to confirm:
+                    </p>
+                    <input
+                      type="text"
+                      value={confirmationText}
+                      onChange={(e) => setConfirmationText(e.target.value)}
+                      placeholder="Type confirmation text here"
+                      className="w-full bg-black/40 border-2 border-white/20 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 font-mono"
+                      autoFocus
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t border-white/10">
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setConfirmationText('');
+                  setDeleteSuccess(false);
+                }}
+                disabled={isDeleting}
+                className="flex-1 px-4 py-3 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed text-white transition-colors font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (confirmationText !== 'DELETE ALL MESSAGES') {
+                    toast.error('Confirmation text does not match');
+                    return;
+                  }
+
+                  setIsDeleting(true);
+                  try {
+                    const token = getToken();
+                    const res = await fetch('/dev-api/api/messages/delete', {
+                      method: 'DELETE',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                      },
+                      body: JSON.stringify({
+                        deleteUserMessages,
+                        deleteAdminMessages,
+                      }),
+                    });
+
+                    const data = await res.json();
+                    if (data.code === 200) {
+                      setDeleteSuccess(true);
+                      toast.success(`Successfully deleted ${data.result?.deletedCount || 0} messages`);
+                      
+                      // Clear all localStorage data related to messages/notifications
+                      try {
+                        // Clear local messages storage
+                        localStorage.removeItem('notifications_messages');
+                        // Clear read state for messages (since messages are deleted)
+                        localStorage.removeItem('read_message_ids');
+                        // Note: We keep read_notification_ids as those are for support notifications, not messages
+                        console.log('Cleared all message-related localStorage data');
+                      } catch (err) {
+                        console.error('Failed to clear localStorage:', err);
+                      }
+                      
+                      // Trigger a page reload after a short delay to refresh all notification states
+                      // This ensures the UI reflects the deletion immediately and shows empty state
+                      setTimeout(() => {
+                        setShowDeleteConfirm(false);
+                        setConfirmationText('');
+                        setDeleteUserMessages(false);
+                        setDeleteAdminMessages(false);
+                        setDeleteSuccess(false);
+                        setIsDeleting(false);
+                        // Force a hard reload to clear all cached data
+                        window.location.href = window.location.href.split('#')[0];
+                      }, 2000);
+                    } else {
+                      toast.error(data.message || 'Failed to delete messages');
+                      setIsDeleting(false);
+                    }
+                  } catch (err) {
+                    console.error('Failed to delete messages:', err);
+                    toast.error('Failed to delete messages. Please try again.');
+                    setIsDeleting(false);
+                  }
+                }}
+                disabled={confirmationText !== 'DELETE ALL MESSAGES' || isDeleting || deleteSuccess}
+                className="flex-1 px-4 py-3 rounded-lg bg-red-600 hover:bg-red-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white transition-colors font-semibold flex items-center justify-center gap-2"
+              >
+                {isDeleting ? (
+                  <>
+                    <Clock className="w-4 h-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : deleteSuccess ? (
+                  <>
+                    <CheckCircle className="w-4 h-4" />
+                    Deleted
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Delete Permanently
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Bulk Delete Confirmation Modal */}
       {pendingBulkDelete && (
